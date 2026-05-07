@@ -1,4 +1,4 @@
-# ... existing code ...
-pandas==2.2.1
-gspread==6.1.0
-google-auth==2.28.1
+streamlit
+pandas
+gspread
+google-auth
