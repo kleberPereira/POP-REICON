@@ -7,7 +7,7 @@ from google.oauth2.service_account import Credentials
 # 1. Configuração da Página
 st.set_page_config(page_title="POP REICON", page_icon="⚡", layout="centered")
 
-# 2. INJEÇÃO DO DESIGN SYSTEM (Baseado no seu protótipo HTML/Tailwind)
+# 2. INJEÇÃO DO DESIGN SYSTEM
 css_prototipo = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -30,7 +30,7 @@ css_prototipo = """
     footer {visibility: hidden;}
     .block-container {padding-top: 1rem !important;}
 
-    /* Top AppBar Fixo baseado no seu HTML */
+    /* Top AppBar Fixo */
     .top-app-bar {
         position: fixed;
         top: 0;
@@ -57,7 +57,7 @@ css_prototipo = """
         margin: 0;
     }
 
-    /* Adaptação das Abas do Streamlit para visual minimalista */
+    /* Navegação das Abas */
     [data-baseweb="tab-list"] {
         background-color: #131313;
         gap: 8px;
@@ -89,7 +89,7 @@ css_prototipo = """
         padding: 4px;
     }
 
-    /* Inputs e Textareas (Surface Container High) */
+    /* Inputs e Textareas */
     [data-baseweb="input"] > div, [data-baseweb="textarea"] > div, [data-baseweb="select"] > div {
         background-color: #2a2a2a !important;
         border: 1px solid rgba(255,255,255,0.05) !important;
@@ -100,10 +100,10 @@ css_prototipo = """
         box-shadow: 0 0 0 1px #ff5a1f !important;
     }
 
-    /* Botões Primários (Baseados no seu protótipo) */
+    /* Botões Primários */
     .stButton > button[kind="primary"] {
         background-color: #ff5a1f !important;
-        color: #3a0b00 !important; /* on-primary-fixed */
+        color: #3a0b00 !important; 
         border: none !important;
         border-radius: 12px !important;
         font-weight: 600 !important;
@@ -156,7 +156,7 @@ try:
     cliente = init_connection()
     aba_planilha = cliente.open_by_url(st.secrets["planilha"]["url"]).sheet1
 except Exception as e:
-    st.error(f"⚠️ Erro de conexão: {e}")
+    st.error(f"⚠️ Erro de conexão com o sistema: {e}")
     st.stop()
 
 @st.cache_data(ttl=60)
@@ -172,29 +172,29 @@ def atualizar_banco():
 funcionarios_db = carregar_dados()
 # ----------------------------------
 
-# Navegação adaptada do seu protótipo
-aba_dash, aba_cadastro, aba_consulta, aba_pop = st.tabs(["Dashboard", "Registry", "Staff", "Docs"])
+# Navegação adaptada
+aba_dash, aba_cadastro, aba_consulta, aba_pop = st.tabs(["Dashboard", "Cadastro", "Equipe", "POP"])
 
-# --- ABA 0: DASHBOARD (Inspirado no "Main Info Glass Card") ---
+# --- ABA 0: DASHBOARD ---
 with aba_dash:
-    st.markdown("<h3 style='font-size: 20px; font-weight: 600; margin-bottom: 16px;'>System Overview</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-size: 20px; font-weight: 600; margin-bottom: 16px;'>Visão Geral do Sistema</h3>", unsafe_allow_html=True)
     
     total_func = len(funcionarios_db)
     setores_ativos = len(set([f.get("Setor", "") for f in funcionarios_db if f.get("Setor", "")]))
     
-    # Recriando o Glass Card do seu protótipo
+    # Card Transparente (Glass Card)
     card_html = f"""
     <div style="background: rgba(26, 26, 26, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
         <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(228, 190, 179, 0.4);">Total Staff</span>
-            <span style="font-size: 16px; color: #e5e2e1;">{total_func} Registered</span>
+            <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(228, 190, 179, 0.4);">Colaboradores</span>
+            <span style="font-size: 16px; color: #e5e2e1;">{total_func} Cadastrados</span>
         </div>
         <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(228, 190, 179, 0.4);">Active Sectors</span>
-            <span style="font-size: 16px; color: #e5e2e1;">{setores_ativos} Departments</span>
+            <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(228, 190, 179, 0.4);">Operacional</span>
+            <span style="font-size: 16px; color: #e5e2e1;">{setores_ativos} Setores Ativos</span>
         </div>
         <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(228, 190, 179, 0.4);">Database</span>
+            <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(228, 190, 179, 0.4);">Banco de Dados</span>
             <span style="font-size: 16px; color: #ff5a1f; display: flex; align-items: center; gap: 6px;">
                 <span style="width: 6px; height: 6px; background-color: #ff5a1f; border-radius: 50%;"></span> Online
             </span>
@@ -203,41 +203,41 @@ with aba_dash:
     """
     st.markdown(card_html, unsafe_allow_html=True)
 
-# --- ABA 1: CADASTRO (Registry) ---
+# --- ABA 1: CADASTRO ---
 with aba_cadastro:
-    st.markdown("<h3 style='font-size: 20px; font-weight: 600; margin-bottom: 16px;'>New Entry</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-size: 20px; font-weight: 600; margin-bottom: 16px;'>Novo Registro</h3>", unsafe_allow_html=True)
     
     with st.container(border=True):
         with st.form("form_cadastro", clear_on_submit=True):
-            nome = st.text_input("Full Name")
-            setor = st.text_input("Sector")
-            funcao = st.text_input("Role / Function")
-            horario = st.text_input("Shift (Ex: Alpha 08:00 - 17:00)")
-            descricao = st.text_area("Technical Focus")
+            nome = st.text_input("Nome Completo")
+            setor = st.text_input("Setor")
+            funcao = st.text_input("Cargo / Função")
+            horario = st.text_input("Jornada (Ex: 08:00 - 17:00)")
+            descricao = st.text_area("Responsabilidades Técnicas")
             
-            submit_button = st.form_submit_button("Save Registry", type="primary", use_container_width=True)
+            submit_button = st.form_submit_button("Salvar Cadastro", type="primary", use_container_width=True)
             
             if submit_button:
                 if not nome or not setor or not funcao:
-                    st.warning("Required fields missing.")
+                    st.warning("Preencha os campos obrigatórios (Nome, Setor e Cargo).")
                 else:
                     novo_id = datetime.now().strftime("%Y%m%d%H%M%S")
                     nova_linha = [novo_id, nome, setor, horario, funcao, descricao]
                     try:
                         aba_planilha.append_row(nova_linha)
                         atualizar_banco()
-                        st.success("Entry logged successfully.")
+                        st.success("Cadastro salvo com sucesso.")
                     except Exception as e:
-                        st.error(f"System error: {e}")
+                        st.error(f"Erro no sistema: {e}")
 
-# --- ABA 2: CONSULTA (Staff) ---
+# --- ABA 2: CONSULTA (EQUIPE) ---
 with aba_consulta:
-    st.markdown("<h3 style='font-size: 20px; font-weight: 600; margin-bottom: 16px;'>Staff Management</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-size: 20px; font-weight: 600; margin-bottom: 16px;'>Gestão da Equipe</h3>", unsafe_allow_html=True)
     
     if len(funcionarios_db) == 0:
-        st.info("No active staff found.")
+        st.info("Nenhum funcionário ativo encontrado.")
     else:
-        filtro_nome = st.text_input("🔍 Search Query", key="busca_nome", placeholder="Enter name...")
+        filtro_nome = st.text_input("🔍 Busca Rápida", key="busca_nome", placeholder="Digite o nome...")
         
         funcionarios_filtrados = [
             f for f in funcionarios_db if filtro_nome.lower() in str(f.get("Nome", "")).lower() 
@@ -248,13 +248,13 @@ with aba_consulta:
             colunas_mostrar = [c for c in ["Nome", "Setor", "Função"] if c in df.columns]
             st.dataframe(df[colunas_mostrar], use_container_width=True, hide_index=True)
         else:
-            st.warning("No matches found.")
+            st.warning("Nenhum resultado encontrado.")
 
         st.divider()
-        st.markdown("<h3 style='font-size: 16px; font-weight: 600;'>Update Protocol</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='font-size: 16px; font-weight: 600;'>Atualizar ou Remover</h3>", unsafe_allow_html=True)
         
         opcoes_edicao = {f"{f.get('Nome')} - {f.get('Setor')}": f for f in funcionarios_db}
-        selecao_edicao = st.selectbox("Select Target:", [""] + list(opcoes_edicao.keys()))
+        selecao_edicao = st.selectbox("Selecione o Funcionário:", [""] + list(opcoes_edicao.keys()))
         
         if selecao_edicao:
             func_alvo = opcoes_edicao[selecao_edicao]
@@ -263,42 +263,42 @@ with aba_consulta:
             
             with st.container(border=True):
                 with st.form("form_edicao"):
-                    e_nome = st.text_input("Name", value=func_alvo.get("Nome", ""))
-                    e_setor = st.text_input("Sector", value=func_alvo.get("Setor", ""))
-                    e_funcao = st.text_input("Role", value=func_alvo.get("Função", ""))
-                    e_horario = st.text_input("Shift", value=func_alvo.get("Horário", ""))
-                    e_descricao = st.text_area("Responsibilities", value=func_alvo.get("Descrição", ""))
+                    e_nome = st.text_input("Nome", value=func_alvo.get("Nome", ""))
+                    e_setor = st.text_input("Setor", value=func_alvo.get("Setor", ""))
+                    e_funcao = st.text_input("Cargo", value=func_alvo.get("Função", ""))
+                    e_horario = st.text_input("Horário", value=func_alvo.get("Horário", ""))
+                    e_descricao = st.text_area("Responsabilidades", value=func_alvo.get("Descrição", ""))
                     
-                    btn_atualizar = st.form_submit_button("Update Data", type="primary", use_container_width=True)
+                    btn_atualizar = st.form_submit_button("Atualizar Dados", type="primary", use_container_width=True)
                     
                     if btn_atualizar:
                         linha_atualizada = [id_alvo, e_nome, e_setor, e_horario, e_funcao, e_descricao]
                         try:
                             aba_planilha.update(range_name=f"A{linha_planilha}:F{linha_planilha}", values=[linha_atualizada])
                             atualizar_banco()
-                            st.success("Data synced.")
+                            st.success("Dados sincronizados com sucesso.")
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Sync error: {e}")
+                            st.error(f"Erro na sincronização: {e}")
 
-                if st.button("Delete Protocol", use_container_width=True):
+                if st.button("Excluir Cadastro", use_container_width=True):
                     try:
                         aba_planilha.delete_rows(linha_planilha)
                         atualizar_banco()
-                        st.success("Target removed.")
+                        st.success("Cadastro removido.")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Execution error: {e}")
+                        st.error(f"Erro na execução: {e}")
 
-# --- ABA 3: GERAR POP (Docs) ---
+# --- ABA 3: GERAR POP ---
 with aba_pop:
-    st.markdown("<h3 style='font-size: 20px; font-weight: 600; margin-bottom: 16px;'>Documentation</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='font-size: 20px; font-weight: 600; margin-bottom: 16px;'>Documentação Técnica</h3>", unsafe_allow_html=True)
     
     if len(funcionarios_db) == 0:
-        st.info("System requires staff data.")
+        st.info("O sistema precisa de dados cadastrados para gerar documentos.")
     else:
         opcoes_pop = [f"{f.get('Nome')} - {f.get('Função')}" for f in funcionarios_db]
-        selecao_pop = st.selectbox("Select Profile:", [""] + opcoes_pop)
+        selecao_pop = st.selectbox("Selecione o Perfil:", [""] + opcoes_pop)
         
         if selecao_pop:
             indice = opcoes_pop.index(selecao_pop) - 1
@@ -313,20 +313,20 @@ with aba_pop:
                 st.markdown("<p style='text-align: center; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(228, 190, 179, 0.4);'>Procedimento Operacional Padrão</p>", unsafe_allow_html=True)
                 st.markdown("<hr>", unsafe_allow_html=True)
                 
-                st.markdown(f"**Operator:** <span style='color:#e5e2e1;'>{func.get('Nome','')}</span>", unsafe_allow_html=True)
-                st.markdown(f"**Sector:** <span style='color:#e5e2e1;'>{func.get('Setor','')}</span>", unsafe_allow_html=True)
-                st.markdown(f"**Role:** <span style='color:#e5e2e1;'>{func.get('Função','')}</span>", unsafe_allow_html=True)
-                st.markdown(f"**Shift:** <span style='color:#e5e2e1;'>{func.get('Horário','') or 'N/A'}</span>", unsafe_allow_html=True)
+                st.markdown(f"**Colaborador:** <span style='color:#e5e2e1;'>{func.get('Nome','')}</span>", unsafe_allow_html=True)
+                st.markdown(f"**Setor:** <span style='color:#e5e2e1;'>{func.get('Setor','')}</span>", unsafe_allow_html=True)
+                st.markdown(f"**Cargo:** <span style='color:#e5e2e1;'>{func.get('Função','')}</span>", unsafe_allow_html=True)
+                st.markdown(f"**Jornada:** <span style='color:#e5e2e1;'>{func.get('Horário','') or 'Não definido'}</span>", unsafe_allow_html=True)
                 
                 st.markdown("<hr>", unsafe_allow_html=True)
-                st.markdown("<p style='color: #ff5a1f; font-weight: 600; font-size: 16px;'>1. Primary Objective</p>", unsafe_allow_html=True)
-                st.markdown(f"<p style='font-size: 14px; color: #939191;'>Operational guidelines for <b>{func.get('Função','')}</b> in <b>{func.get('Setor','')}</b>.</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #ff5a1f; font-weight: 600; font-size: 16px;'>1. Objetivo Principal</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-size: 14px; color: #939191;'>Estabelecer as diretrizes operacionais para a função de <b>{func.get('Função','')}</b> no setor <b>{func.get('Setor','')}</b>.</p>", unsafe_allow_html=True)
                 
-                st.markdown("<p style='color: #ff5a1f; font-weight: 600; font-size: 16px; margin-top: 16px;'>2. Technical Focus</p>", unsafe_allow_html=True)
+                st.markdown("<p style='color: #ff5a1f; font-weight: 600; font-size: 16px; margin-top: 16px;'>2. Escopo Técnico e Atividades</p>", unsafe_allow_html=True)
                 descricao = func.get('Descrição', '')
                 if descricao:
                     st.markdown(f"<p style='font-size: 14px; color: #e5e2e1;'>{descricao}</p>", unsafe_allow_html=True)
                 else:
-                    st.markdown("<p style='font-size: 14px; color: #939191;'><i>No specific parameters defined.</i></p>", unsafe_allow_html=True)
+                    st.markdown("<p style='font-size: 14px; color: #939191;'><i>Nenhum escopo de atividade foi registrado para esta função.</i></p>", unsafe_allow_html=True)
                     
-            st.button("Export Protocol", type="primary", use_container_width=True)
+            st.button("Preparar para Impressão (PDF)", type="primary", use_container_width=True)
