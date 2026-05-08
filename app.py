@@ -8,15 +8,17 @@ import streamlit.components.v1 as components
 # 1. Configuração da Página
 st.set_page_config(page_title="POP REICON", page_icon="⚡", layout="centered")
 
-# Variáveis de Sessão para dinamismo
+# --- VARIÁVEIS DE SESSÃO PARA DINAMISMO ---
 if 'qtd_procedimentos' not in st.session_state:
     st.session_state.qtd_procedimentos = 1
 if 'editando_id' not in st.session_state:
     st.session_state.editando_id = None
 if 'pop_alvo' not in st.session_state:
     st.session_state.pop_alvo = None
+if 'edit_procs' not in st.session_state:
+    st.session_state.edit_procs = []
 
-# 2. INJEÇÃO DO DESIGN SYSTEM E CSS PARA IMPRESSÃO PDF
+# 2. INJEÇÃO DO DESIGN SYSTEM E CSS PARA IMPRESSÃO
 css_prototipo = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -113,12 +115,25 @@ def atualizar_banco():
 
 funcionarios_db = carregar_dados()
 
-# Callbacks para botões dinâmicos
+# --- FUNÇÕES AUXILIARES ---
 def deletar_registro(id_alvo):
     linha = next((i + 2 for i, f in enumerate(funcionarios_db) if str(f.get("ID")) == id_alvo), None)
     if linha:
         aba_planilha.delete_rows(linha)
         atualizar_banco()
+
+# Transforma o texto salvo de volta em lista de procedimentos para edição
+def extrair_procedimentos(texto_salvo):
+    if not texto_salvo: return [("", "")]
+    blocos = texto_salvo.strip().split('\n\n')
+    resultado = []
+    for bloco in blocos:
+        if not bloco.strip(): continue
+        linhas = bloco.strip().split('\n', 1)
+        titulo = linhas[0].replace('**', '').strip()
+        descricao = linhas[1].strip() if len(linhas) > 1 else ""
+        resultado.append((titulo, descricao))
+    return resultado if resultado else [("", "")]
 
 # --- NAVEGAÇÃO ---
 aba_dash, aba_cadastro, aba_consulta, aba_pop = st.tabs(["Dash", "Cadastro", "Equipe", "POP"])
@@ -137,7 +152,7 @@ with aba_dash:
     </div>
     """, unsafe_allow_html=True)
 
-# --- ABA 1: CADASTRO (MELHORIA 1) ---
+# --- ABA 1: CADASTRO ---
 with aba_cadastro:
     st.markdown("### Novo Registro")
     
@@ -147,17 +162,14 @@ with aba_cadastro:
     horario = st.text_input("Jornada (Ex: 08:00 - 17:00)")
     
     st.markdown("#### Procedimentos Técnicos")
-    
     procedimentos_preenchidos = []
     
-    # Renderiza campos dinâmicos baseado na variável de sessão
     for i in range(st.session_state.qtd_procedimentos):
         with st.container(border=True):
-            tit = st.text_input(f"Procedimento {i+1}", key=f"tit_{i}")
-            desc = st.text_area(f"Descrição do Procedimento {i+1}", key=f"desc_{i}")
+            tit = st.text_input(f"Título do Procedimento {i+1}", key=f"novo_tit_{i}")
+            desc = st.text_area(f"Descrição {i+1}", key=f"novo_desc_{i}")
             procedimentos_preenchidos.append((tit, desc))
 
-    # Botão de + para adicionar mais campos
     if st.button("➕ Adicionar outro procedimento", use_container_width=True):
         st.session_state.qtd_procedimentos += 1
         st.rerun()
@@ -167,7 +179,6 @@ with aba_cadastro:
         if not nome or not setor or not funcao:
             st.warning("Preencha Nome, Setor e Cargo.")
         else:
-            # Junta todos os procedimentos em um único texto para salvar na coluna "Descrição"
             descricao_final = ""
             for tit, desc in procedimentos_preenchidos:
                 if tit:
@@ -178,12 +189,12 @@ with aba_cadastro:
             try:
                 aba_planilha.append_row(nova_linha)
                 atualizar_banco()
-                st.session_state.qtd_procedimentos = 1 # Reseta o contador
+                st.session_state.qtd_procedimentos = 1 
                 st.success("Cadastro salvo com sucesso.")
             except Exception as e:
                 st.error(f"Erro: {e}")
 
-# --- ABA 2: CONSULTA / EQUIPE (MELHORIA 2) ---
+# --- ABA 2: CONSULTA E EDIÇÃO DINÂMICA ---
 with aba_consulta:
     st.markdown("### Gestão da Equipe")
     
@@ -204,44 +215,70 @@ with aba_consulta:
     if not funcionarios_filtrados:
         st.info("Nenhum registro encontrado com estes filtros.")
     else:
-        # Layout em Cards (Cartões) intuitivos
         for func in funcionarios_filtrados:
             id_func = str(func.get("ID"))
             with st.container(border=True):
                 st.markdown(f"<span style='font-size: 18px; font-weight: bold; color: #ff5a1f;'>{func.get('Nome')}</span>", unsafe_allow_html=True)
                 st.markdown(f"<span style='color: #939191;'>{func.get('Setor')} | {func.get('Função')}</span>", unsafe_allow_html=True)
                 
-                # Se NÃO estiver editando este card, mostra os botões de ação
+                # MODO DE VISUALIZAÇÃO
                 if st.session_state.editando_id != id_func:
                     c1, c2 = st.columns(2)
                     if c1.button("✏️ Editar", key=f"btn_ed_{id_func}", use_container_width=True):
                         st.session_state.editando_id = id_func
+                        # Extrai os procedimentos salvos para a memória temporária de edição
+                        st.session_state.edit_procs = extrair_procedimentos(func.get("Descrição", ""))
                         st.rerun()
                     if c2.button("🗑️ Excluir", key=f"btn_del_{id_func}", on_click=deletar_registro, args=(id_func,), use_container_width=True):
-                        pass # Executa o callback e recarrega
+                        pass 
                 
-                # Se ESTIVER editando este card, expande o formulário
+                # MODO DE EDIÇÃO
                 else:
                     st.markdown("---")
                     e_nome = st.text_input("Nome", value=func.get("Nome", ""), key=f"en_{id_func}")
                     e_setor = st.text_input("Setor", value=func.get("Setor", ""), key=f"es_{id_func}")
                     e_funcao = st.text_input("Cargo", value=func.get("Função", ""), key=f"ef_{id_func}")
                     e_horario = st.text_input("Horário", value=func.get("Horário", ""), key=f"eh_{id_func}")
-                    e_descricao = st.text_area("Procedimentos", value=func.get("Descrição", ""), key=f"ed_{id_func}", height=150)
                     
+                    st.markdown("#### Editar Procedimentos")
+                    novos_procs_editados = []
+                    
+                    # Renderiza os procedimentos já existentes e os novos adicionados
+                    for i, proc in enumerate(st.session_state.edit_procs):
+                        with st.container(border=True):
+                            t = st.text_input(f"Título do Procedimento {i+1}", value=proc[0], key=f"etit_{id_func}_{i}")
+                            d = st.text_area(f"Descrição {i+1}", value=proc[1], key=f"edesc_{id_func}_{i}")
+                            novos_procs_editados.append((t, d))
+                    
+                    # Botão para adicionar mais um procedimento durante a edição
+                    if st.button("➕ Adicionar Novo Procedimento", key=f"add_proc_{id_func}", use_container_width=True):
+                        # Salva o que o usuário já digitou antes de recarregar a tela
+                        st.session_state.edit_procs = novos_procs_editados
+                        st.session_state.edit_procs.append(("", ""))
+                        st.rerun()
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
                     c3, c4 = st.columns(2)
-                    if c3.button("Salvar", type="primary", key=f"sv_{id_func}", use_container_width=True):
+                    
+                    if c3.button("Salvar Alterações", type="primary", key=f"sv_{id_func}", use_container_width=True):
+                        desc_final = ""
+                        for t, d in novos_procs_editados:
+                            if t: # Só salva se o título não estiver em branco
+                                desc_final += f"**{t}**\n{d}\n\n"
+                        
                         linha_planilha = next((i + 2 for i, f in enumerate(funcionarios_db) if str(f.get("ID")) == id_func), None)
-                        linha_atualizada = [id_func, e_nome, e_setor, e_horario, e_funcao, e_descricao]
+                        linha_atualizada = [id_func, e_nome, e_setor, e_horario, e_funcao, desc_final.strip()]
                         aba_planilha.update(range_name=f"A{linha_planilha}:F{linha_planilha}", values=[linha_atualizada])
+                        
                         atualizar_banco()
                         st.session_state.editando_id = None
                         st.rerun()
+                        
                     if c4.button("Cancelar", key=f"cc_{id_func}", use_container_width=True):
                         st.session_state.editando_id = None
                         st.rerun()
 
-# --- ABA 3: GERAR POP E EXPORTAR PDF (MELHORIA 3 e 3.1) ---
+# --- ABA 3: GERAR POP E EXPORTAR PDF ---
 with aba_pop:
     st.markdown("### Emissão de Documento")
     
@@ -263,7 +300,6 @@ with aba_pop:
         id_str = str(func.get('ID', '0000'))[-4:]
         codigo_pop = f"POP-{setor_str}-{id_str}"
         
-        # Área do Documento a ser impressa
         with st.container(border=True):
             st.markdown(f"<h3 class='print-destaque' style='text-align: center; color: #ff5a1f; margin-bottom:0;'>{codigo_pop}</h3>", unsafe_allow_html=True)
             st.markdown("<p style='text-align: center; font-size: 12px; letter-spacing: 0.05em;'>PROCEDIMENTO OPERACIONAL PADRÃO</p>", unsafe_allow_html=True)
@@ -285,7 +321,7 @@ with aba_pop:
             else:
                 st.markdown("<i>Nenhum procedimento registrado.</i>", unsafe_allow_html=True)
                 
-        # INJEÇÃO JS PARA IMPRESSÃO NATIVA DO CELULAR/COMPUTADOR (Resolve a falha do PDF)
+        # Botão de Impressão (PDF)
         html_print = """
         <script>
         function printDocument() {
